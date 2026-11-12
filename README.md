@@ -1,103 +1,105 @@
 # BootHop
 
-BootHop은 이 PC를 **다음 한 번만** 다른 시스템으로 부팅하게 해 주는 Windows 도구입니다. 그다음 부팅은 원래 Windows로 돌아옵니다.
+**English** | [한국어](README.ko.md)
 
-- **WIM 파일** (Windows PE의 `boot.wim` 등): 파일을 RAM 디스크에 올려서 부팅합니다.
-- **VHD / VHDX 파일**: 그 안에 설치된 Windows로 바로 부팅합니다 (Windows의 기본 VHD 부팅).
+BootHop is a Windows tool that starts this PC **once** from another system. The start after that goes back to your usual Windows.
 
-USB를 만들거나 부팅 메뉴를 고칠 필요 없이, 파일을 고르고 다시 시작하면 됩니다. Windows 부팅 관리자의 "다음 부팅 한 번" 기능(`bcdedit /bootsequence`)을 쓰므로 원래 부팅 설정은 바뀌지 않습니다.
+- **WIM files** (such as the `boot.wim` of Windows PE): the file is loaded into a RAM disk and started from there.
+- **VHD / VHDX files**: the Windows installed in the file is started directly (Windows' native VHD boot).
 
-## 요구 사항
+You don't need to make a USB drive or edit the boot menu: choose a file and restart. BootHop uses the "next start only" feature of the Windows Boot Manager (`bcdedit /bootsequence`), so your usual boot settings stay as they are.
 
-- Windows 8 이상, x64
-- 관리자 권한 (부팅 항목을 만들 때 UAC 창이 뜹니다)
-- UEFI와 BIOS 모두 지원
-- 부팅할 파일은 **로컬 디스크**에 있어야 합니다.
-  - WIM: NTFS 또는 FAT32
+## Requirements
+
+- Windows 8 or later, x64
+- Administrator rights (a UAC prompt appears when the boot entry is made)
+- UEFI and BIOS are both supported
+- The file to start from must be on a **local disk**:
+  - WIM: NTFS or FAT32
   - VHD / VHDX: NTFS
-  - BitLocker로 암호화된 드라이브는 피하세요. 부팅 관리자가 파일을 읽지 못할 수 있습니다. BootHop은 그런 드라이브면 미리 경고합니다.
-- WIM 부팅은 파일 전체를 메모리에 올립니다. WIM 크기보다 1 GB 이상 많은 메모리가 있어야 합니다.
+  - Avoid drives encrypted with BitLocker: the Boot Manager may not be able to read the file there. BootHop warns you first when the drive is encrypted.
+- A WIM boot loads the whole file into memory, so the PC needs at least 1 GB more memory than the size of the WIM.
 
-## 사용법
+## Usage
 
-### 목록 창
+### The list window
 
-`BootHop.exe`를 실행하면 부팅 목록 창이 열립니다.
+Run `BootHop.exe` to open the boot list window.
 
-1. **[추가...]** 를 누르거나 탐색기에서 파일을 끌어다 놓아 `.wim` / `.vhd` / `.vhdx` 파일을 넣습니다.
-2. 하나를 골라 **[한 번 부팅]** 을 누릅니다 (더블 클릭이나 Enter도 됩니다).
-3. 이미지가 여러 개인 WIM이면 이미지를 고르고 확인 창에서 **예**를 누릅니다.
-4. 부팅 항목이 만들어지면 지금 다시 시작할지 묻습니다.
+1. Add `.wim` / `.vhd` / `.vhdx` files with **[Add...]**, or drag them onto the window from Explorer.
+2. Choose one and press **[Boot once]** (a double click or Enter works too).
+3. If the WIM has several images, choose one, then press **Yes** in the confirmation.
+4. When the boot entry has been made, BootHop asks whether to restart now.
 
-예약된 부팅이 있으면 창 위쪽에 표시됩니다. **[예약 취소]** 로 취소할 수 있습니다.
+When a start is pending, it is shown at the top of the window. **[Cancel it]** cancels it.
 
-창 아래쪽의 옵션:
+The options at the bottom of the window:
 
-| 옵션 | 설명 |
+| Option | What it does |
 |---|---|
-| 마우스 오른쪽 클릭 메뉴 | 탐색기 메뉴에 BootHop 항목을 넣습니다. 파일 메뉴에는 "이 파일로 한 번 부팅"과 "부팅 목록에 추가"가, 빈 곳 메뉴에는 "부팅 목록 보기"가 들어갑니다. Windows 11에서는 "추가 옵션 표시" 안에 있습니다. |
-| boot.sdi를 WIM 파일 옆에 복사 | 끄면(기본) Windows에 있는 boot.sdi를 씁니다. 켜면 WIM 파일 옆에 복사해서 씁니다. |
-| 다시 시작한 뒤 boot.sdi 지우기 | 복사한 boot.sdi를 다시 시작한 뒤 처음 로그온할 때 지웁니다. |
+| Right-click menu | Adds BootHop items to the Explorer menu: "Boot once from this file" and "Add to the boot list" on files, "Show the boot list" on the empty space of a folder or the desktop. In Windows 11 they are under "Show more options". |
+| Copy boot.sdi next to the WIM file | Off (default): the boot.sdi of Windows is used. On: it is copied next to the WIM file and used from there. |
+| Delete boot.sdi after the restart | Deletes a copied boot.sdi at the first logon after the restart. |
 
-목록은 exe 옆의 `BootHop.list` 에 저장됩니다.
+The list is saved in `BootHop.list` next to the exe.
 
-### 명령 줄
+### Command line
 
-`BootHop.com` 은 명령 프롬프트용입니다. `BootHop.exe` 없이 혼자서도 동작하고, 창의 설정을 읽지 않습니다.
+`BootHop.com` is for the command prompt. It works on its own, without `BootHop.exe`, and does not read the settings of the window.
 
 ```
-BootHop /boot <파일> [/index N] [/restart] [/copysdi [/deletesdi]]
+BootHop /boot <file> [/index N] [/restart] [/copysdi [/deletesdi]]
 BootHop /status
 BootHop /cancel
 BootHop /?
 ```
 
-| 명령 / 옵션 | 설명 |
+| Command / option | What it does |
 |---|---|
-| `/boot <파일>` | 묻지 않고 다음 부팅을 예약합니다 (UAC 창은 뜹니다). |
-| `/index N` | WIM의 이미지 번호. 지정하지 않으면 이미지가 하나일 때 그것, 아니면 부팅 이미지를 씁니다. |
-| `/restart` | 예약이 끝나면 바로 다시 시작합니다. |
-| `/copysdi` | boot.sdi를 WIM 옆에 복사해서 씁니다. |
-| `/deletesdi` | `/copysdi` 와 함께 쓰면 복사한 boot.sdi를 다시 시작한 뒤 지웁니다. |
-| `/status` | 다음 부팅이 BootHop으로 예약되어 있는지 보여 줍니다. |
-| `/cancel` | 예약을 취소하고 BootHop 항목을 지웁니다. |
+| `/boot <file>` | Sets up the next start without asking (the UAC prompt still appears). |
+| `/index N` | The image number in the WIM. Without it: the only image, or else the boot image. |
+| `/restart` | Restarts right after the setup. |
+| `/copysdi` | Copies boot.sdi next to the WIM and uses it from there. |
+| `/deletesdi` | With `/copysdi`: deletes the copied boot.sdi after the restart. |
+| `/status` | Shows whether the next start is set to BootHop. |
+| `/cancel` | Cancels the pending start and deletes the BootHop entry. |
 
-종료 코드는 다음과 같습니다.
+Exit codes:
 
-| 코드 | 뜻 |
+| Code | Meaning |
 |---|---|
-| 0 | 완료 (`/status`: 예약 있음) |
-| 1 | 실패 (`/status`: 예약 없음) |
-| 2 | 잘못된 인수 |
-| 1223 | UAC 취소 |
+| 0 | Done (`/status`: a start is pending) |
+| 1 | Failed (`/status`: none pending) |
+| 2 | Wrong arguments |
+| 1223 | UAC prompt cancelled |
 
-메시지 언어는 콘솔 코드 페이지를 따릅니다 (949는 한국어, 그 밖은 영어).
+The language of the messages follows the console code page (949: Korean, otherwise English).
 
-## 설정 파일 (선택)
+## Settings file (optional)
 
-exe 옆에 `BootHop.ini` 를 직접 만들어 창의 언어와 테마를 정할 수 있습니다.
+Create `BootHop.ini` next to the exe to set the language and theme of the window:
 
 ```
-; language: ko | en, theme: dark | light
-language = ko
+; language: en | ko, theme: dark | light
+language = en
 theme = dark
 ```
 
-## 알아 둘 점
+## Good to know
 
-- **WIM은 Windows PE 이미지만 부팅됩니다.** `install.wim` 같은 일반 Windows 이미지는 RAM 디스크로 부팅되지 않습니다.
-- **WIM의 부팅 이미지가 바뀔 수 있습니다.** RAM 디스크는 WIM의 부팅 이미지로 부팅합니다. 다른 이미지를 고르면 그 이미지를 부팅 이미지로 바꿉니다. 이때 확인 창에 미리 표시됩니다.
-- **VHD는 부팅할 때 연결되어 있으면 안 됩니다.** 동적 확장 VHD는 부팅하는 동안 최대 크기까지 커지므로, 드라이브에 그만큼 빈 공간이 있어야 합니다.
-- **부팅 관리자에는 항목이 하나만 생깁니다.** 이름은 "BootHop: …"이고 부팅 메뉴에는 나타나지 않습니다. 새로 예약하거나 `/cancel` 하면 이전 항목은 지워집니다.
+- **Only Windows PE images start from a WIM.** A regular Windows image such as `install.wim` does not start from a RAM disk.
+- **The boot image of the WIM may change.** The RAM disk starts the boot image of the WIM. If you choose another image, BootHop makes it the boot image; the confirmation tells you so beforehand.
+- **The VHD must not be attached when the PC starts.** A dynamically expanding VHD grows to its full size while it runs, so the drive needs that much free space.
+- **Only one entry is added to the Boot Manager.** It is named "BootHop: …" and does not appear in the boot menu. A new setup or `/cancel` deletes the previous one.
 
-## 빌드
+## Build
 
-Visual Studio 2017 이상(C++ 데스크톱 개발)이 필요합니다. 아래 명령을 실행하면 `BootHop.exe` 와 `BootHop.com` 이 만들어집니다. 다른 라이브러리는 필요 없고, Windows에 들어 있는 `wimgapi.dll` 과 `virtdisk.dll` 만 씁니다.
+Requires Visual Studio 2017 or later (Desktop development with C++). Run the command below to make `BootHop.exe` and `BootHop.com`. No other libraries are needed: only `wimgapi.dll` and `virtdisk.dll`, which come with Windows.
 
 ```
 build.bat
 ```
 
-## 라이선스
+## License
 
-MIT. `LICENSE` 를 보세요.
+MIT. See `LICENSE`.
