@@ -1,0 +1,9 @@
+# BootHop - build results, settings and list of this PC
+BootHop.exe
+BootHop.com
+BootHop.ini
+BootHop.list
+obj/
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/

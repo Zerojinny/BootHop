@@ -1,0 +1,40 @@
+// BootHop - resources: the icon, the version and the language files
+// (obj\lang.rc, written by build.bat: one "<code> LANG <file>" line per
+// lang\*.ini). The manifest is embedded by the linker.
+#include <winver.h>
+#include "src/version.h"
+
+1 ICON "BootHop.ico"
+
+// file properties -> Details: version, copyright and license
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION     OB_VER_MAJOR, OB_VER_MINOR, OB_VER_PATCH, OB_VER_BUILD
+ PRODUCTVERSION  OB_VER_MAJOR, OB_VER_MINOR, OB_VER_PATCH, OB_VER_BUILD
+ FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
+ FILEFLAGS       0
+ FILEOS          VOS_NT_WINDOWS32
+ FILETYPE        VFT_APP
+ FILESUBTYPE     VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName",      "zerojinny"
+            VALUE "FileDescription",  "BootHop - boot once from a WIM file (RAM disk)"
+            VALUE "FileVersion",      OB_FILEVERSION_STR
+            VALUE "InternalName",     "BootHop"
+            VALUE "LegalCopyright",   OB_COPYRIGHT_STR
+            VALUE "OriginalFilename", "BootHop.exe"
+            VALUE "ProductName",      "BootHop"
+            VALUE "ProductVersion",   OB_VERSION_STR
+            VALUE "Comments",         "MIT License. " OB_URL_STR " - WIM files through wimgapi.dll of Windows."
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 1200
+    END
+END
+
+#include "obj/lang.rc"
