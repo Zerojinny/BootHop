@@ -128,6 +128,49 @@ namespace wimsmith
         return b;
     }
 
+    // n bytes of a file from offset (from the end when offset < 0); "" = not read
+    static std::string ReadAt(const wstring& file, long long offset, DWORD n)
+    {
+        HANDLE h = CreateFileW(file.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr);
+        if (h == INVALID_HANDLE_VALUE) return std::string();
+        std::string b(n, '\0');
+        LARGE_INTEGER at;
+        at.QuadPart = offset;
+        DWORD got = 0;
+        bool ok = SetFilePointerEx(h, at, nullptr, offset < 0 ? FILE_END : FILE_BEGIN) && ReadFile(h, &b[0], n, &got, nullptr) && got == n;
+        CloseHandle(h);
+        return ok ? b : std::string();
+    }
+
+    // the header of the file before anything else reads it (wimgapi only says
+    // ERROR_BAD_FORMAT, e.g. for an empty file: seen 2026-11-12):
+    // .wim "MSWIM\0\0\0" (also a split part / ESD), .vhdx "vhdxfile",
+    // .vhd the footer "conectix" in its last 512 bytes (511 in old ones).
+    // "" = it looks right, else the language key of the problem
+    static const wchar_t* BadHeader(const wstring& file)
+    {
+        long long size = FileSize(file);
+        if (size <= 0) return L"rb.empty_file";
+        wstring ext = FileExt(file);
+        if (EqualsI(ext, L".wim")) return ReadAt(file, 0, 8) == std::string("MSWIM\0\0\0", 8) ? nullptr : L"rb.bad_header";
+        if (EqualsI(ext, L".vhdx")) return ReadAt(file, 0, 8) == "vhdxfile" ? nullptr : L"rb.bad_header";
+        if (EqualsI(ext, L".vhd"))
+        {
+            if (size < 512) return L"rb.bad_header";
+            std::string tail = ReadAt(file, -512, 512);
+            return tail.find("conectix") != std::string::npos ? nullptr : L"rb.bad_header";
+        }
+        return nullptr;
+    }
+
+    static wstring TypeName(const wstring& file)
+    {
+        wstring t = FileExt(file);
+        if (!t.empty()) t = t.substr(1);
+        for (wchar_t& c : t) c = (wchar_t)towupper(c);
+        return t;
+    }
+
     // the image to start: a list when the file has more than one (the boot image first chosen)
     static int ChooseBootImage(const wstring& wim, const wg::WimFileInfo& f)
     {
@@ -312,6 +355,8 @@ namespace wimsmith
         wstring root = Root(wim);
         UINT type = root.size() == 3 ? DriveTypeOf(root[0]) : DRIVE_REMOTE;
         if (type != DRIVE_FIXED && type != DRIVE_REMOVABLE) { Tell(L::F(L"rb.not_local", wim), MB_ICONWARNING); return 1; }
+        if (!FileExists(wim)) { Tell(L::F(L"ob.file_missing", wim), MB_ICONWARNING); return 1; }
+        if (const wchar_t* bad = BadHeader(wim)) { Tell(L::F(bad, wim, TypeName(wim)), MB_ICONWARNING); return 1; }
         if (vhd) return RunVhdBoot(wim);
 
         // wimgapi.dll of Windows (wimg.cpp); reading needs no elevation
