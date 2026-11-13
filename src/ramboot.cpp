@@ -377,16 +377,17 @@ namespace wimsmith
         const wg::WimImage* im = nullptr;
         for (const wg::WimImage& i : f.Images) if (i.Index == index) im = &i;
         if (!im) { if (quiet) Print(L::F(L"cli.no_index", wim, index), true); return 1; }
-        // only Windows PE starts from a RAM disk; another image may still be one
-        if (!EqualsI(im->InstallationType, L"WindowsPE")
-            && !Ask(L::F(L"rb.not_pe", index, im->Name, im->InstallationType.empty() ? wstring(L"-") : im->InstallationType), MB_ICONWARNING))
-            return 0;
         bool setBoot = f.BootIndex != index;
         long long size = f.FileBytes > 0 ? f.FileBytes : FileSize(wim);
 
         // the loader of this firmware in the image: checked here already, before
-        // the UAC prompt (the helper checks it again); unelevated it works too
+        // the UAC prompt (the helper checks it again); unelevated it works too.
+        // Only Windows PE starts from a RAM disk: INSTALLATIONTYPE "WindowsPE", or
+        // else the shell of Windows PE in the image (winpeshl.exe: a PE built from
+        // install.wim, like PhoenixPE, keeps "Client" in its XML; a regular
+        // Windows has no winpeshl.exe)
         {
+            bool pe = EqualsI(im->InstallationType, L"WindowsPE");
             bool uefi = FirmwareUefi();
             wstring loader = uefi ? L"\\Windows\\System32\\Boot\\winload.efi" : L"\\Windows\\System32\\Boot\\winload.exe";
             wchar_t tmp[MAX_PATH + 1];
@@ -397,12 +398,15 @@ namespace wimsmith
             {
                 CreateDirs(temp);
                 wg::HasFile(wim, index, loader, temp, &missing);
+                if (!pe && !missing) pe = wg::HasFile(wim, index, L"\\Windows\\System32\\winpeshl.exe", temp).empty();
                 DeleteTree(temp);
                 wstring parent = DirName(temp);
                 if (!DirHasEntries(parent)) RemoveDirectoryW(parent.c_str());
             }
             catch (const HelperError&) {}
             if (missing) { Tell(L::F(L"rb.no_loader", wim, index, loader, uefi ? wstring(L"UEFI") : wstring(L"BIOS")), MB_ICONWARNING); return 1; }
+            if (!pe && !Ask(L::F(L"rb.not_pe", index, im->Name, im->InstallationType.empty() ? wstring(L"-") : im->InstallationType), MB_ICONWARNING))
+                return 0;
         }
         // the boot manager reads the WIM from the drive: an encrypted one may fail
         if (BitLockerOn(root[0]) && !Ask(L::F(L"rb.bitlocker", wim, root.substr(0, 2)), MB_ICONWARNING)) return 0;
