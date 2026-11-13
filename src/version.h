@@ -6,11 +6,11 @@
 
 #define OB_VER_MAJOR    1
 #define OB_VER_MINOR    0
-#define OB_VER_PATCH    0
+#define OB_VER_PATCH    1
 #define OB_VER_BUILD    0
 
-#define OB_VERSION_STR      "1.0.0"
-#define OB_FILEVERSION_STR  "1.0.0.0"
+#define OB_VERSION_STR      "1.0.1"
+#define OB_FILEVERSION_STR  "1.0.1.0"
 #define OB_COPYRIGHT_STR    "Copyright (c) 2026 zerojinny. MIT License."
 #define OB_AUTHOR_STR       "zerojinny"
 #define OB_EMAIL_STR        "wimsmith2026@gmail.com"
