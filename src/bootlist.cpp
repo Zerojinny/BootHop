@@ -55,6 +55,19 @@ namespace wimsmith
         return b;
     }
 
+    // the last write time of the file in local time, "" when unknown
+    static wstring ModifiedText(const wstring& file)
+    {
+        WIN32_FILE_ATTRIBUTE_DATA d;
+        FILETIME local;
+        SYSTEMTIME s;
+        if (!GetFileAttributesExW(file.c_str(), GetFileExInfoStandard, &d)) return wstring();
+        if (!FileTimeToLocalFileTime(&d.ftLastWriteTime, &local) || !FileTimeToSystemTime(&local, &s)) return wstring();
+        wchar_t t[32];
+        swprintf_s(t, L"%04d-%02d-%02d %02d:%02d", s.wYear, s.wMonth, s.wDay, s.wHour, s.wMinute);
+        return t;
+    }
+
     static wstring TypeText(const wstring& file)
     {
         wstring ext = FileExt(file);
@@ -163,7 +176,7 @@ namespace wimsmith
 
         std::vector<wstring> files = LoadList();
 
-        HWND w = TopWindow(L"BootHop", 760, 420, nullptr);
+        HWND w = TopWindow(L"BootHop", 890, 420, nullptr);
         Main = w;
         SetMinSize(w, 720, 300);   // the three check boxes in a row above the buttons
         HWND hint = Label(w, L::T(L"ob.hint"), nullptr, color::Dim);
@@ -172,7 +185,7 @@ namespace wimsmith
         HWND btnCancel = Button(w, L::T(L"ob.cancel_boot"));
         Tooltip(btnCancel, L::T(L"ob.cancel_boot_tip"));
         HWND list = List(w, { { L::T(L"ob.col_name"), 220 }, { L::T(L"ob.col_type"), 60 }, { L::T(L"ob.col_size"), -90 },
-            { L::T(L"ob.col_folder"), 340 } });
+            { L::T(L"ob.col_modified"), 130 }, { L::T(L"ob.col_folder"), 340 } });
         HWND btnAdd = Button(w, L::T(L"ob.add")), btnRemove = Button(w, L::T(L"ob.remove"));
         HWND btnBoot = Button(w, L::T(L"ob.boot")), btnClose = Button(w, L::T(L"ob.close"));
         Primary(btnBoot, false);
@@ -209,7 +222,8 @@ namespace wimsmith
             for (const wstring& f : files)
             {
                 long long size = FileExists(f) ? FileSize(f) : -1;
-                ListAdd(list, { FileName(f), TypeText(f), size >= 0 ? SizeText(size) : L::T(L"ob.missing"), DirName(f) });
+                ListAdd(list, { FileName(f), TypeText(f), size >= 0 ? SizeText(size) : L::T(L"ob.missing"),
+                    size >= 0 ? ModifiedText(f) : wstring(), DirName(f) });
             }
             if (!files.empty())
             {
